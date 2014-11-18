@@ -5,16 +5,28 @@ var express = require('express');
 var RSS = require('rss');
 var util = require('util');
 var cheerio = require('cheerio');
+var md = require('marked');
+var fs = require('fs');
 var app = express();
+var readme;
 
 app
-  .get('/', function(req, res) {
-    res.send('<h1>PirateBay Search to RSS</h1>');
+  .get('/', function(req, res, next) {
+    if (readme) return res.send(readme);
+    fs.readFile(__dirname + '/README.md', function(err, file) {
+      if (err) return next(err);
+      readme = '<!doctype html><html><head><link rel="stylesheet" ' +
+               'href="//rawgit.com/sindresorhus/github-markdown-css/gh-pages/' +
+               'github-markdown.css"><title>PirateBay Search to RSS</title>' +
+               '</head><body class="markdown-body">' + md(file.toString()) +
+               '</body></html>';
+      res.send(readme);
+    });
   })
   .get('/rss', generateRSS)
   .listen(process.env.PORT || 8080);
 
-function generateRSS(req, res) {
+function generateRSS(req, res, next) {
   var query = req.param('q');
   if (!query) return res.status(400).end();
 
@@ -22,7 +34,7 @@ function generateRSS(req, res) {
     .get(util.format('https://thepiratebay.se/search/%s/0/7/0', query))
     .end(function(err, result) {
       var $, rss;
-      if (err) return console.log(err);
+      if (err) return next(err);
       $ = cheerio.load(result.text);
       rss = new RSS({
         title: query,
@@ -35,6 +47,6 @@ function generateRSS(req, res) {
           url: item.children('a').attr('href')
         });
       });
-      res.send(rss.xml('  '));
+      res.type('text/xml').send(rss.xml('  '));
     });
 }

@@ -3,6 +3,7 @@
     "bluebird": "^2.3.11",
     "cheerio": "^0.18.0",
     "express": "^4.10.2",
+    "marked": "^0.3.2",
     "rss": "^1.0.1",
     "superagent": "^0.21.0"
   }
